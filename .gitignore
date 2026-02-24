@@ -1,0 +1,30 @@
+# virtual env
+.venv/
+venv/
+
+# python cache
+__pycache__/
+*.pyc
+
+# model weights
+models/
+checkpoints/
+result_model/
+mistral-7b
+*.bin
+*.pt
+*.ckpt
+*.safetensors
+
+# datasets
+data/
+datasets/
+
+# logs & experiments
+logs/
+wandb/
+runs/
+
+# OS junk
+.DS_Store
+Thumbs.db
