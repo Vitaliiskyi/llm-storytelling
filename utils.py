@@ -1,6 +1,7 @@
+# Description: Utility functions for processing storytelling data, 
+# including splitting long texts into manageable chunks with added noise for variability.
+
 import random
-
-
 TARGET_LEN = 1536
 NOISE_MIN = 100
 NOISE_MAX = 500
