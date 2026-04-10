@@ -8,6 +8,14 @@ NOISE_MIN = 100
 NOISE_MAX = 200
 MIN_LAST_CHUNK = 50
 
+def format_story_prompt(title: str, completion: str = "", eos_token: str = "") -> str:
+    """Форматирует текст сказки для обучения или промпт для генерации."""
+    prompt = f"Title: {title}\n\n"
+    if completion:
+        prompt += completion + eos_token
+    return prompt
+
+
 
 def split_example(example,
                   target_len=TARGET_LEN,

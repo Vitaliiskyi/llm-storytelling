@@ -2,9 +2,10 @@ from matplotlib.pyplot import title
 import pandas as pd
 import json
 from utils import split_example
+from config import RAW_CSV_PATH, CHUNKED_JSONL_PATH
 
 # Путь к CSV
-csv_file = "folk_tales_deduplicated.csv"
+csv_file = RAW_CSV_PATH
 
 # Read the CSV file into a DataFrame
 df = pd.read_csv(csv_file)
@@ -34,6 +35,6 @@ def convert_df_to_jsonl(df, output_file):
                 f.write(json.dumps(chunk, ensure_ascii=False) + "\n")
 
 
-convert_df_to_jsonl(df, "stories_chunked.jsonl")
-with open("stories_chunked.jsonl", "r", encoding="utf-8") as f:
+convert_df_to_jsonl(df, CHUNKED_JSONL_PATH)
+with open(CHUNKED_JSONL_PATH, "r", encoding="utf-8") as f:
     print(len(f.readlines()))

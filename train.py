@@ -10,8 +10,10 @@ from transformers import \
 from datasets import load_dataset
 import torch
 import datetime
+from config import BASE_MODEL_NAME, CHUNKED_JSONL_PATH, TRAIN_OUTPUT_DIR, LOGS_DIR
+from utils import format_story_prompt
 
-model_name = "EleutherAI/pythia-160m"
+model_name = BASE_MODEL_NAME
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 # tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 tokenizer.pad_token = tokenizer.eos_token
@@ -21,7 +23,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Загружаем jsonl
 # Набор данных в виде: {"title": "The Thieves and the Cock", "completion": " Some Thieves broke into a house, and ...”"}
-dataset = load_dataset("json", data_files="stories_chunked.jsonl")
+dataset = load_dataset("json", data_files=CHUNKED_JSONL_PATH)
 
 # def tokenize(example):
 #     text = f"Title: {example['title']}\n\n{example['completion']}"
@@ -37,7 +39,7 @@ dataset = dataset["train"].train_test_split(
 
 
 def tokenize(example):
-    text = f"Title: {example['title']}\n\n{example['completion']}"
+    text = format_story_prompt(example['title'], example['completion'], eos_token=tokenizer.eos_token)
 
     # Возвращаем input_ids и attention_mask.
     # Обрезаем только экстремально длинные тексты, которые не влезут в Pythia.
@@ -58,7 +60,7 @@ tokenized_dataset = dataset.map(
 
 
 training_args = TrainingArguments(
-    output_dir="/media/vitalii/WDBlue/result_model/pythia160-2epochs-fp16-eval/",
+    output_dir=TRAIN_OUTPUT_DIR,
     # /media/vitalii/WDBlue/result_model/pythia410-4epochs/
     eval_strategy="steps",
     eval_steps=50,
@@ -68,7 +70,7 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=16,   # Компенсируем маленький батч
     save_steps=500,
     save_total_limit=2,
-    logging_dir="./logs",
+    logging_dir=LOGS_DIR,
     logging_steps=50,
     learning_rate=5e-5,
     warmup_steps=100,
