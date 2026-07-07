@@ -23,10 +23,12 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name, torch_dtype=torch.bfloat16,)
 
     # Загружаем jsonl
     dataset = load_dataset("json", data_files=CHUNKED_JSONL_PATH)
+    dataset = dataset.filter(lambda x: x["token_count"] <= 1536)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
     def tokenize_function(example):
@@ -36,8 +38,8 @@ def main():
         return tokenizer(
             text,
             add_special_tokens=False,
-            truncation=True,
-            max_length=256,  # Уменьшено для 4GB VRAM
+            truncation=False,
+
         )
 
     print("Tokenizing dataset...")
@@ -50,20 +52,24 @@ def main():
 
     training_args = TrainingArguments(
         output_dir=TRAIN_OUTPUT_DIR,
-        eval_strategy="no",
+        eval_strategy="epoch",
         overwrite_output_dir=True,
-        num_train_epochs=1,  # 1 эпоха для теста
+        num_train_epochs=3,
         per_device_train_batch_size=1,
-        gradient_accumulation_steps=16,
-        save_steps=100,
-        logging_steps=1,
-        learning_rate=5e-5,
-        fp16=True,
-        gradient_checkpointing=True,  # Обязательно для 4GB!
-        dataloader_num_workers=0,
+        gradient_accumulation_steps=4,
+        save_strategy="epoch",     # Сохранять строго в конце каждой эпохи
+        per_device_eval_batch_size=1,
+        gradient_checkpointing=True,        # было False
+        logging_steps=10,
+        learning_rate=2e-5,
+        bf16=True,
+        tf32=True,
+        dataloader_num_workers=4,
         dataloader_pin_memory=True,
-        optim="adamw_torch",
+        # optim="adamw_torch",
+        optim="adamw_bnb_8bit",  # вместо "adamw_torch"
         report_to="none",
+        warmup_ratio=0.05,
     )
 
     data_collator = DataCollatorForLanguageModeling(
@@ -73,7 +79,8 @@ def main():
 
     # --- Проверка данных перед обучением ---
     # Делаем это внутри main(), чтобы не сломать multiprocessing на Windows
-    dl = DataLoader(tokenized_dataset["train"], batch_size=4, collate_fn=data_collator)
+    dl = DataLoader(tokenized_dataset["train"],
+                    batch_size=4, collate_fn=data_collator)
     batch = next(iter(dl))
     print("Batch shape verification:", batch["input_ids"].shape)
     # ---------------------------------------

@@ -4,7 +4,21 @@
 venv/
 results/
 .results/
+# Игнорируем данные
+dataset/
+*.csv
+*.jsonl
+*.txt
 
+# Специфичное для Jupyter и Python
+.ipynb_checkpoints/
+__pycache__/
+
+# Игнорируем веса моделей (пригодится для train.py)
+*.pt
+*.bin
+*.safetensors
+runs/
 # python cache
 __pycache__/
 *.pyc
