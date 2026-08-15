@@ -22,10 +22,10 @@ def main():
     parser = argparse.ArgumentParser(
         description="Генерация сказки с помощью обученной модели.")
     parser.add_argument(
-        "--title", type=str, default="The Boy Who Spoke to Crows", help="Название сказки",)
+        "--title", type=str, default="The Woodcutter Arthur and the Quest for the Lost Silver Crown", help="Название сказки",)
     parser.add_argument("--start", type=str, default="",
                         help="Начальная фраза для генерации (опционально)",)
-    parser.add_argument("--max_tokens", type=int, default=1500,
+    parser.add_argument("--max_tokens", type=int, default=2048,
                         help="Сколько токенов сгенерировать")
     args = parser.parse_args()
 
@@ -40,15 +40,7 @@ def main():
         torch_dtype=torch.bfloat16,  # Используем bf16 для скорости на 3090
         device_map="cuda",
     )
-# outputs = model.generate(
-#     **inputs,
-#     max_new_tokens=1500,                  # Безопасный лимит (оставляем место для промпта)
-#     eos_token_id=tokenizer.eos_token_id,  # Указываем, какой токен считать концом сказки
-#     pad_token_id=tokenizer.eos_token_id,  # Убираем ворнинги в консоли
-#     temperature=0.8,                      # Немного креативности
-#     top_p=0.9,                            # Отсекаем совсем бредовые слова
-#     repetition_penalty=1.1,               # Штраф за повторы, чтобы модель не ходила по кругу и двигалась к развязке
-# )
+
     model.eval()  # Переводим в режим предсказания
     print(f"Модель успешно загружена из чекпоинта: {checkpoint_path}")
 
@@ -65,9 +57,9 @@ def main():
             **inputs,
             max_new_tokens=args.max_tokens,
             do_sample=True,
-            temperature=0.8,
+            temperature=0.3,
             top_p=0.9,
-            repetition_penalty=1.1,
+            repetition_penalty=1.2,
             pad_token_id=tokenizer.eos_token_id,
             eos_token_id=tokenizer.eos_token_id,
         )

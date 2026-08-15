@@ -8,7 +8,6 @@ from transformers import (
 )
 from datasets import load_dataset
 import torch
-import os
 from config import BASE_MODEL_NAME, CHUNKED_JSONL_PATH, TRAIN_OUTPUT_DIR, LOGS_DIR
 from utils import format_story_prompt
 
@@ -28,7 +27,7 @@ def main():
 
     # Загружаем jsonl
     dataset = load_dataset("json", data_files=CHUNKED_JSONL_PATH)
-    dataset = dataset.filter(lambda x: x["token_count"] <= 1536)
+    dataset = dataset.filter(lambda x: x["token_count"] <= 2000)
     dataset = dataset["train"].train_test_split(test_size=0.1, seed=42)
 
     def tokenize_function(example):
@@ -54,19 +53,18 @@ def main():
         output_dir=TRAIN_OUTPUT_DIR,
         eval_strategy="epoch",
         overwrite_output_dir=True,
-        num_train_epochs=3,
+        num_train_epochs=2,
         per_device_train_batch_size=1,
-        gradient_accumulation_steps=4,
-        save_strategy="epoch",     # Сохранять строго в конце каждой эпохи
+        gradient_accumulation_steps=2,
+        save_strategy="epoch",
         per_device_eval_batch_size=1,
-        gradient_checkpointing=True,        # было False
+        gradient_checkpointing=True,
         logging_steps=10,
         learning_rate=2e-5,
         bf16=True,
         tf32=True,
         dataloader_num_workers=4,
         dataloader_pin_memory=True,
-        # optim="adamw_torch",
         optim="adamw_bnb_8bit",  # вместо "adamw_torch"
         report_to="none",
         warmup_ratio=0.05,
@@ -79,8 +77,11 @@ def main():
 
     # --- Проверка данных перед обучением ---
     # Делаем это внутри main(), чтобы не сломать multiprocessing на Windows
-    dl = DataLoader(tokenized_dataset["train"],
-                    batch_size=4, collate_fn=data_collator)
+    dl = DataLoader(
+        tokenized_dataset["train"],
+        batch_size=4,
+        collate_fn=data_collator
+    )
     batch = next(iter(dl))
     print("Batch shape verification:", batch["input_ids"].shape)
     # ---------------------------------------
